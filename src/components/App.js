@@ -1,50 +1,59 @@
 import React from "react";
 import AccountContainer from "./AccountContainer";
-import React, {useEffect, useState} from "react";
-import { transactions } from "../transactionsData";
-import AddTransactionForm from "./AddTransactionForm";
-import Search from "./Search";
 
 function App() {
-  const [transactions,setTransactions]=useState([])
-  useEffect(()=>{
-    fetch("http://localhost:8001/transactions")
-    .then(r=>r.json())
-    .then(transc=>setTransactions(transc))
-  },[])
-  // console.log(transactions)
-  function  handleUpdateOnSubmission(transaction){ 
-    // console.log(transaction)
-    // setTransactions(transactions=>[...transactions,transaction])
-    const serverOptions={
-      method: "POST",
-      headers:{
-        "content-Type":"application/json"
-      },
-      body:JSON.stringify(transaction)
-    }
-    fetch("http://localhost:8001/transactions",serverOptions)
-    .then(r=>r.json)
-    .then(newItem=>setTransactions(transactions=>[...transactions,newItem]))
-    .catch(err=>console(err))
-  }
-const searchFilter=""
-const filteredTransactions=transactions.filter(transaction=>searchFilter===""?true:s)
+	const [transactions, setTransactions] = React.useState([]);
 
-  function handleOnSearch(search){
-    setTransactions(transactions=>transactions.filter(transaction=>transaction.description.includes(search)))
-  }
-  return (
-    <div className="ui raised segment">
-      <div className="ui segment violet inverted">
-        <h2>The Royal Bank of Flatiron</h2>
-      </div>
-      <Search onSearch={handleOnSearch} />
-      <AddTransactionForm onSubmission={handleUpdateOnSubmission} />
-      <Transactions transactions={transactions}/> 
-      <AccountContainer />
-    </div>
-  );
+	React.useEffect(() => {
+		fetchTransactions();
+	}, []);
+
+	const fetchTransactions = async () => {
+		try {
+			const res = await fetch("http://localhost:8001/transactions");
+			const jsonRes = await res.json();
+			setTransactions(jsonRes);
+		} catch (error) {
+			console.log(error);
+		}
+	};
+	const handleAddTransaction = (transaction) => {
+		setTransactions([...transactions, transaction]);
+	};
+	const handleDeleteTransaction = (transId) => {
+		const filterTransactions = transactions.filter(
+			(trans) => trans.id !== transId
+		);
+
+		setTransactions(filterTransactions);
+	};
+	const handleSearch = (searchTerm) => {
+		if (searchTerm) {
+			const filteredTransactions = transactions.filter((trans) => {
+				if (trans.description.toLowerCase().match(searchTerm.toLowerCase())) {
+					return true;
+				} else {
+					return false;
+				}
+			});
+			setTransactions(filteredTransactions);
+		} else {
+			fetchTransactions();
+		}
+	};
+	return (
+		<div className="ui raised segment">
+			<div className="ui segment violet inverted">
+				<h2>The Royal Bank of Flatiron</h2>
+			</div>
+			<AccountContainer
+				handleAddTransaction={handleAddTransaction}
+				transactions={transactions}
+				handleSearch={handleSearch}
+				handleDeleteTransaction={handleDeleteTransaction}
+			/>
+		</div>
+	);
 }
 
 export default App;
